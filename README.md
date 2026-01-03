@@ -6,6 +6,8 @@
 >
 > <sub>Questions? Join the Clawdis Discord and ask in **#nix**.</sub>
 
+![On declarative build systems](docs/images/on-declarative-build-systems.png)
+
 ## The Magic
 
 - **One flake, everything works.** Gateway, macOS app, whisper, spotify, camera tools - all wired up and pinned.

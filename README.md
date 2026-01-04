@@ -6,8 +6,6 @@
 >
 > <sub>Questions? Join the Clawdbot Discord and ask in **#nix-packaging**: https://discord.com/channels/1456350064065904867/1457003026412736537</sub>
 
-![On declarative build systems](docs/images/on-declarative-build-systems.png)
-
 ## Table of Contents
 
 - [What You Get](#what-you-get)
@@ -65,6 +63,8 @@ You don't need to learn Nix deeply. You describe what you want, Nix figures out 
 
 <details>
 <summary><strong>How it actually works</strong></summary>
+
+![On declarative build systems](docs/images/on-declarative-build-systems.png)
 
 Nix is a **declarative package manager**. Instead of running commands to install things, you write a config file that says "I want these tools at these versions." Nix reads that file and builds everything in `/nix/store` - isolated from your system.
 

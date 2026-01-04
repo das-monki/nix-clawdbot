@@ -28,17 +28,22 @@ let
     };
   };
 
-  firstPartySources = {
-    summarize = "github:clawdbot/nix-stepiete-tools?dir=tools/summarize";
-    peekaboo = "github:clawdbot/nix-stepiete-tools?dir=tools/peekaboo";
-    oracle = "github:clawdbot/nix-stepiete-tools?dir=tools/oracle";
-    poltergeist = "github:clawdbot/nix-stepiete-tools?dir=tools/poltergeist";
-    sag = "github:clawdbot/nix-stepiete-tools?dir=tools/sag";
-    camsnap = "github:clawdbot/nix-stepiete-tools?dir=tools/camsnap";
-    gogcli = "github:clawdbot/nix-stepiete-tools?dir=tools/gogcli";
-    bird = "github:clawdbot/nix-stepiete-tools?dir=tools/bird";
-    sonoscli = "github:clawdbot/nix-stepiete-tools?dir=tools/sonoscli";
-    imsg = "github:clawdbot/nix-stepiete-tools?dir=tools/imsg";
+  firstPartySources = let
+    stepieteRev = "90aeee0490fd21528756db05262421fd5f769415";
+    stepieteNarHash = "sha256-9l3RyhkGocrQ3qsQ+Eigb3CDpHroUp46r2t5WDxvbdw=";
+    stepiete = tool:
+      "github:clawdbot/nix-stepiete-tools?dir=tools/${tool}&rev=${stepieteRev}&narHash=${stepieteNarHash}";
+  in {
+    summarize = stepiete "summarize";
+    peekaboo = stepiete "peekaboo";
+    oracle = stepiete "oracle";
+    poltergeist = stepiete "poltergeist";
+    sag = stepiete "sag";
+    camsnap = stepiete "camsnap";
+    gogcli = stepiete "gogcli";
+    bird = stepiete "bird";
+    sonoscli = stepiete "sonoscli";
+    imsg = stepiete "imsg";
   };
 
   firstPartyPlugins = lib.filter (p: p != null) (lib.mapAttrsToList (name: source:

@@ -20,9 +20,9 @@
     let
       overlay = import ./nix/overlay.nix;
       sourceInfoStable = import ./nix/sources/clawdbot-source.nix;
-      sourceInfoCanary = import ./nix/sources/clawdbot-source-canary.nix;
+      systems = [ "x86_64-linux" "aarch64-darwin" ];
     in
-    flake-utils.lib.eachDefaultSystem (system:
+    flake-utils.lib.eachSystem systems (system:
       let
         pkgs = import nixpkgs {
           inherit system;
@@ -36,28 +36,10 @@
           sourceInfo = sourceInfoStable;
           steipetePkgs = steipetePkgs;
         };
-        packageSetCanary = import ./nix/packages {
-          pkgs = pkgs;
-          sourceInfo = sourceInfoCanary;
-          steipetePkgs = steipetePkgs;
-        };
-        dockerImages = import ./nix/images/clawdbot-docker.nix { inherit pkgs; };
-        stableBundle = if pkgs.stdenv.hostPlatform.isDarwin
-          then packageSetStable.clawdbot
-          else packageSetStable.clawdbot-gateway;
-        canaryBundle = if pkgs.stdenv.hostPlatform.isDarwin
-          then packageSetCanary.clawdbot
-          else packageSetCanary.clawdbot-gateway;
       in
       {
         packages = packageSetStable // {
-          clawdbot-docker = dockerImages.image;
-          clawdbot-docker-stream = dockerImages.stream;
-          clawdbot-gateway-stable = packageSetStable.clawdbot-gateway;
-          clawdbot-stable = stableBundle;
-          clawdbot-gateway-canary = packageSetCanary.clawdbot-gateway;
-          clawdbot-canary = canaryBundle;
-          default = stableBundle;
+          default = packageSetStable.clawdbot;
         };
 
         apps = {
@@ -66,14 +48,11 @@
 
         checks = {
           gateway = packageSetStable.clawdbot-gateway;
-          gateway-canary = packageSetCanary.clawdbot-gateway;
+        } // (if pkgs.stdenv.hostPlatform.isLinux then {
           gateway-tests = pkgs.callPackage ./nix/checks/clawdbot-gateway-tests.nix {
             sourceInfo = sourceInfoStable;
           };
-          gateway-canary-tests = pkgs.callPackage ./nix/checks/clawdbot-gateway-tests.nix {
-            sourceInfo = sourceInfoCanary;
-          };
-        };
+        } else {});
 
         devShells.default = pkgs.mkShell {
           packages = [

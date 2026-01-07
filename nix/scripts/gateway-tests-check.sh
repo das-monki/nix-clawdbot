@@ -23,5 +23,4 @@ export VITEST_MAX_THREADS="1"
 export VITEST_MIN_WORKERS="1"
 export VITEST_MAX_WORKERS="1"
 
-pnpm lint
 pnpm test

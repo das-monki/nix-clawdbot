@@ -36,7 +36,6 @@ let
     "bird"
     "sag"
     "summarize"
-    "gemini-cli"
     "openhue-cli"
     "wacli"
     "sonoscli"

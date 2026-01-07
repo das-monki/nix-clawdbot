@@ -533,33 +533,6 @@ Uses `instances.default` to unlock per-group mention rules. If `instances` is se
 
 ## Advanced
 
-### Docker (headless gateway)
-
-For running a Telegram-only, headless gateway in Docker. The macOS app is separate.
-
-Build the image with Determinate Nix:
-
-```bash
-# macOS host (reliable):
-nix build .#clawdbot-docker --system aarch64-linux
-docker load < result
-
-# Linux host (fast streaming load):
-nix run .#clawdbot-docker-stream --system aarch64-linux | docker load
-```
-
-Run it (state lives in a mounted volume at /data):
-
-```bash
-docker run --rm -p 18789:18789 -v clawdbot-data:/data \
-  -e CLAWDBOT_TELEGRAM_BOT_TOKEN="$BOT_TOKEN" \
-  -e CLAWDBOT_TELEGRAM_ALLOW_FROM="12345678,-1001234567890" \
-  -e CLAWDBOT_ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-  ghcr.io/clawdbot/clawdbot-gateway:latest
-```
-
-Swap updates with zero downtime: start a new container on the same volume, then stop the old one.
-
 ### Dual-instance setup (prod + dev)
 
 Use a shared base config and override only what's different. After changing local plugin or gateway code, re-run `home-manager switch` to rebuild.
@@ -649,7 +622,7 @@ Pin lives in:
 ### Automated pipeline (no manual steps)
 
 1) **clawdinators updater** proposes a new stable pin.  
-2) **Garnix** builds/tests the package (`pnpm test`).  
+2) **Garnix** builds the package on Linux + macOS and runs `pnpm test` on Linux.  
 3) **clawdinators smoke test** runs against real Discord in `#clawdinators-test`.  
 4) If green → promote to stable.  
 5) If red → keep current stable pin.
@@ -692,8 +665,6 @@ home-manager switch --rollback  # revert
 | `clawdbot-gateway` | Gateway CLI only |
 | `clawdbot-tools` | Toolchain bundle (gateway helpers + CLIs) |
 | `clawdbot-app` | macOS app only |
-| `clawdbot-docker` | OCI image tarball (gateway + tools) |
-| `clawdbot-docker-stream` | OCI image stream (fast load) |
 
 ### What we manage vs what you manage
 

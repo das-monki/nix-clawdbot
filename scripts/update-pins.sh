@@ -93,7 +93,7 @@ perl -0pi -e "s|hash = \"[^\"]+\";|hash = \"${app_hash}\";|" "$app_file"
 build_log=$(mktemp)
 log "Building gateway to validate pnpmDepsHash"
 if ! nix build .#clawdbot-gateway --accept-flake-config >"$build_log" 2>&1; then
-  pnpm_hash=$(grep -Eo 'got: *sha256-[A-Za-z0-9+/=]+' "$build_log" | head -n 1 | sed 's/.*got: *//')
+  pnpm_hash=$(grep -Eo 'got: *sha256-[A-Za-z0-9+/=]+' "$build_log" | head -n 1 | sed 's/.*got: *//' || true)
   if [[ -z "$pnpm_hash" ]]; then
     tail -n 200 "$build_log" >&2 || true
     rm -f "$build_log"

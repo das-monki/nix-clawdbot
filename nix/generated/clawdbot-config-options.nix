@@ -107,6 +107,29 @@ in
         };
       }; });
       };
+      compaction = lib.mkOption {
+        type = t.submodule { options = {
+        memoryFlush = lib.mkOption {
+          type = t.submodule { options = {
+          enabled = lib.mkOption {
+            type = t.bool;
+          };
+          prompt = lib.mkOption {
+            type = t.str;
+          };
+          softThresholdTokens = lib.mkOption {
+            type = t.int;
+          };
+          systemPrompt = lib.mkOption {
+            type = t.str;
+          };
+        }; };
+        };
+        reserveTokensFloor = lib.mkOption {
+          type = t.int;
+        };
+      }; };
+      };
       contextPruning = lib.mkOption {
         type = t.submodule { options = {
         hardClear = lib.mkOption {

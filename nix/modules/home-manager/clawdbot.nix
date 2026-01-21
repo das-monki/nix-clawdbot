@@ -54,10 +54,11 @@ let
   };
 
   firstPartySources = let
-    stepieteRev = "e4e2cac265de35175015cf1ae836b0b30dddd7b7";
-    stepieteNarHash = "sha256-L8bKt5rK78dFP3ZoP1Oi1SSAforXVHZDsSiDO+NsvEE=";
+    # Using das-monki fork with cross-platform plugin fix
+    stepieteRev = "e3a7f7b79b49d5e01677df7e5e4385d277fe2a47";
+    stepieteNarHash = "sha256-RiKYDNrT4xosCZcDtwdcBFC10C6LcQrtQxVr9+AdDio=";
     stepiete = tool:
-      "github:clawdbot/nix-steipete-tools?dir=tools/${tool}&rev=${stepieteRev}&narHash=${stepieteNarHash}";
+      "github:das-monki/nix-steipete-tools?dir=tools/${tool}&rev=${stepieteRev}&narHash=${stepieteNarHash}";
   in {
     summarize = stepiete "summarize";
     peekaboo = stepiete "peekaboo";
@@ -171,6 +172,11 @@ let
             source = lib.mkOption {
               type = lib.types.str;
               description = "Plugin source pointer (e.g., github:owner/repo or path:/...).";
+            };
+            plugin = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "Plugin name to select from clawdbotPlugins (for multi-plugin flakes).";
             };
             config = lib.mkOption {
               type = lib.types.attrs;
@@ -543,15 +549,34 @@ let
 
   resolvePlugin = plugin: let
     flake = builtins.getFlake plugin.source;
+    # Support both single-plugin flakes (clawdbotPlugin) and
+    # multi-plugin flakes (clawdbotPlugins.<name>)
     clawdbotPlugin =
-      if flake ? clawdbotPlugin then flake.clawdbotPlugin
-      else throw "clawdbotPlugin missing in ${plugin.source}";
+      if plugin.plugin != null then
+        # Multi-plugin flake: select by name
+        if flake ? clawdbotPlugins && flake.clawdbotPlugins ? ${plugin.plugin}
+        then flake.clawdbotPlugins.${plugin.plugin}
+        else throw "clawdbotPlugins.${plugin.plugin} missing in ${plugin.source}"
+      else
+        # Single-plugin flake (original behavior)
+        if flake ? clawdbotPlugin then flake.clawdbotPlugin
+        else throw "clawdbotPlugin missing in ${plugin.source}";
     needs = clawdbotPlugin.needs or {};
+    # Get packages for target system from flake.packages.${system}
+    # This avoids cross-compilation issues where builtins.currentSystem
+    # in the plugin flake returns the build host instead of target
+    # For multi-plugin flakes, prefer plugin-specific packages if declared
+    targetPackages = flake.packages.${pkgs.system} or {};
+    pluginPackages =
+      if clawdbotPlugin ? packages && clawdbotPlugin.packages != []
+      then clawdbotPlugin.packages
+      else if targetPackages != {} then lib.attrValues targetPackages
+      else [];
   in {
     source = plugin.source;
     name = clawdbotPlugin.name or (throw "clawdbotPlugin.name missing in ${plugin.source}");
     skills = clawdbotPlugin.skills or [];
-    packages = clawdbotPlugin.packages or [];
+    packages = pluginPackages;
     needs = {
       stateDirs = needs.stateDirs or [];
       requiredEnv = needs.requiredEnv or [];
@@ -810,6 +835,7 @@ let
       "${inst.systemd.unitName}" = {
         Unit = {
           Description = "Clawdbot gateway (${name})";
+          X-Restart-Triggers = [ "${configFile}" ];
         };
         Service = {
           ExecStart = "${gatewayWrapper}/bin/clawdbot-gateway-${name} gateway --port ${toString inst.gatewayPort}";
@@ -974,6 +1000,11 @@ in {
           source = lib.mkOption {
             type = lib.types.str;
             description = "Plugin source pointer (e.g., github:owner/repo or path:/...).";
+          };
+          plugin = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Plugin name to select from clawdbotPlugins (for multi-plugin flakes).";
           };
           config = lib.mkOption {
             type = lib.types.attrs;

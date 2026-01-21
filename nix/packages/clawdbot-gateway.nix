@@ -2,7 +2,7 @@
 , stdenv
 , fetchFromGitHub
 , fetchurl
-, nodejs_22
+, nodejs-slim_24
 , pnpm_10
 , pkg-config
 , jq
@@ -54,7 +54,7 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   nativeBuildInputs = [
-    nodejs_22
+    nodejs-slim_24
     pnpm_10
     pkg-config
     jq
@@ -71,10 +71,10 @@ stdenv.mkDerivation (finalAttrs: {
     npm_config_arch = pnpmArch;
     npm_config_platform = pnpmPlatform;
     PNPM_CONFIG_MANAGE_PACKAGE_MANAGER_VERSIONS = "false";
-    npm_config_nodedir = nodejs_22;
+    npm_config_nodedir = nodejs-slim_24;
     npm_config_python = python3;
     NODE_PATH = "${nodeAddonApi}/lib/node_modules:${node-gyp}/lib/node_modules";
-    NODE_BIN = "${nodejs_22}/bin/node";
+    NODE_BIN = "${nodejs-slim_24}/bin/node";
     PNPM_DEPS = finalAttrs.pnpmDeps;
     NODE_GYP_WRAPPER_SH = "${../scripts/node-gyp-wrapper.sh}";
     GATEWAY_PREBUILD_SH = "${../scripts/gateway-prebuild.sh}";

@@ -36,7 +36,7 @@ let
   };
 
   mkTelegramConfig = inst: lib.optionalAttrs inst.providers.telegram.enable {
-    telegram = {
+    channels.telegram = {
       enabled = true;
       tokenFile = inst.providers.telegram.botTokenFile;
       allowFrom = inst.providers.telegram.allowFrom;

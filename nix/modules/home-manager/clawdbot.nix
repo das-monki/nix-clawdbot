@@ -170,8 +170,14 @@ let
         type = lib.types.listOf (lib.types.submodule {
           options = {
             source = lib.mkOption {
-              type = lib.types.str;
-              description = "Plugin source pointer (e.g., github:owner/repo or path:/...).";
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "Plugin source URL (e.g., github:owner/repo). Requires --impure or locked URL. Prefer 'input' for pure evaluation.";
+            };
+            input = lib.mkOption {
+              type = lib.types.nullOr lib.types.attrs;
+              default = null;
+              description = "Plugin flake input (e.g., inputs.my-plugins). Preferred over 'source' for pure evaluation.";
             };
             plugin = lib.mkOption {
               type = lib.types.nullOr lib.types.str;
@@ -548,7 +554,17 @@ let
       {};
 
   resolvePlugin = plugin: let
-    flake = builtins.getFlake plugin.source;
+    # Support both flake inputs (pure) and URL strings (legacy/impure)
+    hasInput = plugin.input != null;
+    hasSource = plugin.source != null;
+    pluginRef =
+      if hasInput then "flake input"
+      else if hasSource then plugin.source
+      else throw "Plugin must specify either 'input' (flake input) or 'source' (URL string)";
+    flake =
+      if hasInput then plugin.input
+      else if hasSource then builtins.getFlake plugin.source
+      else throw "Plugin must specify either 'input' or 'source'";
     # Support both single-plugin flakes (clawdbotPlugin) and
     # multi-plugin flakes (clawdbotPlugins.<name>)
     clawdbotPlugin =
@@ -556,11 +572,11 @@ let
         # Multi-plugin flake: select by name
         if flake ? clawdbotPlugins && flake.clawdbotPlugins ? ${plugin.plugin}
         then flake.clawdbotPlugins.${plugin.plugin}
-        else throw "clawdbotPlugins.${plugin.plugin} missing in ${plugin.source}"
+        else throw "clawdbotPlugins.${plugin.plugin} missing in ${pluginRef}"
       else
         # Single-plugin flake (original behavior)
         if flake ? clawdbotPlugin then flake.clawdbotPlugin
-        else throw "clawdbotPlugin missing in ${plugin.source}";
+        else throw "clawdbotPlugin missing in ${pluginRef}";
     needs = clawdbotPlugin.needs or {};
     # Get packages for target system from flake.packages.${system}
     # This avoids cross-compilation issues where builtins.currentSystem
@@ -573,8 +589,8 @@ let
       else if targetPackages != {} then lib.attrValues targetPackages
       else [];
   in {
-    source = plugin.source;
-    name = clawdbotPlugin.name or (throw "clawdbotPlugin.name missing in ${plugin.source}");
+    source = pluginRef;
+    name = clawdbotPlugin.name or (throw "clawdbotPlugin.name missing in ${pluginRef}");
     skills = clawdbotPlugin.skills or [];
     packages = pluginPackages;
     needs = {
@@ -998,8 +1014,14 @@ in {
       type = lib.types.listOf (lib.types.submodule {
         options = {
           source = lib.mkOption {
-            type = lib.types.str;
-            description = "Plugin source pointer (e.g., github:owner/repo or path:/...).";
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Plugin source URL (e.g., github:owner/repo). Requires --impure or locked URL. Prefer 'input' for pure evaluation.";
+          };
+          input = lib.mkOption {
+            type = lib.types.nullOr lib.types.attrs;
+            default = null;
+            description = "Plugin flake input (e.g., inputs.my-plugins). Preferred over 'source' for pure evaluation.";
           };
           plugin = lib.mkOption {
             type = lib.types.nullOr lib.types.str;

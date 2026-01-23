@@ -13,7 +13,8 @@
     flake-utils.url = "github:numtide/flake-utils";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nix-steipete-tools.url = "github:clawdbot/nix-steipete-tools";
+    nix-steipete-tools.url = "github:das-monki/nix-steipete-tools";
+    nix-steipete-tools.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, flake-utils, home-manager, nix-steipete-tools }:
@@ -67,7 +68,11 @@
       }
     ) // {
       overlays.default = overlay;
-      homeManagerModules.clawdbot = import ./nix/modules/home-manager/clawdbot.nix;
+      # Pre-bind steipeteToolsInput so consumers don't need extraSpecialArgs
+      homeManagerModules.clawdbot = { config, lib, pkgs, ... }@args:
+        import ./nix/modules/home-manager/clawdbot.nix (args // {
+          steipeteToolsInput = nix-steipete-tools;
+        });
       darwinModules.clawdbot = import ./nix/modules/darwin/clawdbot.nix;
     };
 }

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, steipeteToolsInput, ... }:
 
 let
   cfg = config.programs.clawdbot;
@@ -53,28 +53,17 @@ let
     };
   };
 
-  firstPartySources = let
-    # Using das-monki fork with cross-platform plugin fix
-    stepieteRev = "e3a7f7b79b49d5e01677df7e5e4385d277fe2a47";
-    stepieteNarHash = "sha256-RiKYDNrT4xosCZcDtwdcBFC10C6LcQrtQxVr9+AdDio=";
-    stepiete = tool:
-      "github:das-monki/nix-steipete-tools?dir=tools/${tool}&rev=${stepieteRev}&narHash=${stepieteNarHash}";
-  in {
-    summarize = stepiete "summarize";
-    peekaboo = stepiete "peekaboo";
-    oracle = stepiete "oracle";
-    poltergeist = stepiete "poltergeist";
-    sag = stepiete "sag";
-    camsnap = stepiete "camsnap";
-    gogcli = stepiete "gogcli";
-    bird = stepiete "bird";
-    sonoscli = stepiete "sonoscli";
-    imsg = stepiete "imsg";
-  };
+  # First-party plugins from nix-steipete-tools (passed via extraSpecialArgs)
+  firstPartyPluginNames = [
+    "summarize" "peekaboo" "oracle" "poltergeist" "sag"
+    "camsnap" "gogcli" "bird" "sonoscli" "imsg"
+  ];
 
-  firstPartyPlugins = lib.filter (p: p != null) (lib.mapAttrsToList (name: source:
-    if (cfg.firstParty.${name}.enable or false) then { inherit source; } else null
-  ) firstPartySources);
+  firstPartyPlugins = lib.filter (p: p != null) (map (name:
+    if (cfg.firstParty.${name}.enable or false)
+    then { input = steipeteToolsInput; plugin = name; }
+    else null
+  ) firstPartyPluginNames);
 
   effectivePlugins = cfg.plugins ++ firstPartyPlugins;
 

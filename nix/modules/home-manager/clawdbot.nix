@@ -813,20 +813,20 @@ let
         };
         Service = {
           ExecStart = "${gatewayWrapper}/bin/clawdbot-gateway-${name} gateway --port ${toString inst.gatewayPort}";
-          WorkingDirectory = inst.stateDir;
+          WorkingDirectory = resolvePath inst.stateDir;
           Restart = "always";
           RestartSec = "1s";
           Environment = [
             "HOME=${homeDir}"
-            "CLAWDBOT_CONFIG_PATH=${inst.configPath}"
-            "CLAWDBOT_STATE_DIR=${inst.stateDir}"
+            "CLAWDBOT_CONFIG_PATH=${resolvePath inst.configPath}"
+            "CLAWDBOT_STATE_DIR=${resolvePath inst.stateDir}"
             "CLAWDBOT_NIX_MODE=1"
-            "CLAWDIS_CONFIG_PATH=${inst.configPath}"
-            "CLAWDIS_STATE_DIR=${inst.stateDir}"
+            "CLAWDIS_CONFIG_PATH=${resolvePath inst.configPath}"
+            "CLAWDIS_STATE_DIR=${resolvePath inst.stateDir}"
             "CLAWDIS_NIX_MODE=1"
           ];
-          StandardOutput = "append:${inst.logPath}";
-          StandardError = "append:${inst.logPath}";
+          StandardOutput = "append:${resolvePath inst.logPath}";
+          StandardError = "append:${resolvePath inst.logPath}";
         };
         Install = {
           WantedBy = [ "default.target" ];

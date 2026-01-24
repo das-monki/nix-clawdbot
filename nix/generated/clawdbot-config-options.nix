@@ -1443,6 +1443,19 @@ in
           };
         }; });
         };
+        heartbeat = lib.mkOption {
+          type = t.submodule { options = {
+          showAlerts = lib.mkOption {
+            type = t.bool;
+          };
+          showOk = lib.mkOption {
+            type = t.bool;
+          };
+          useIndicator = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
+        };
         historyLimit = lib.mkOption {
           type = t.int;
         };
@@ -1577,6 +1590,19 @@ in
         };
       }; });
       };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
+      };
       historyLimit = lib.mkOption {
         type = t.int;
       };
@@ -1614,6 +1640,19 @@ in
       type = t.submodule { options = {
       groupPolicy = lib.mkOption {
         type = t.enum [ "open" "disabled" "allowlist" ];
+      };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
       };
     }; };
     };
@@ -1809,6 +1848,19 @@ in
             type = t.listOf (t.oneOf [ t.str t.number ]);
           };
         }; });
+        };
+        heartbeat = lib.mkOption {
+          type = t.submodule { options = {
+          showAlerts = lib.mkOption {
+            type = t.bool;
+          };
+          showOk = lib.mkOption {
+            type = t.bool;
+          };
+          useIndicator = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
         };
         historyLimit = lib.mkOption {
           type = t.int;
@@ -2045,6 +2097,19 @@ in
         };
       }; });
       };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
+      };
       historyLimit = lib.mkOption {
         type = t.int;
       };
@@ -2165,6 +2230,19 @@ in
           };
         }; });
         };
+        heartbeat = lib.mkOption {
+          type = t.submodule { options = {
+          showAlerts = lib.mkOption {
+            type = t.bool;
+          };
+          showOk = lib.mkOption {
+            type = t.bool;
+          };
+          useIndicator = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
+        };
         historyLimit = lib.mkOption {
           type = t.int;
         };
@@ -2268,6 +2346,19 @@ in
         };
       }; });
       };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
+      };
       historyLimit = lib.mkOption {
         type = t.int;
       };
@@ -2352,6 +2443,19 @@ in
       };
       groupPolicy = lib.mkOption {
         type = t.enum [ "open" "disabled" "allowlist" ];
+      };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
       };
       historyLimit = lib.mkOption {
         type = t.int;
@@ -2499,6 +2603,19 @@ in
         groupPolicy = lib.mkOption {
           type = t.enum [ "open" "disabled" "allowlist" ];
         };
+        heartbeat = lib.mkOption {
+          type = t.submodule { options = {
+          showAlerts = lib.mkOption {
+            type = t.bool;
+          };
+          showOk = lib.mkOption {
+            type = t.bool;
+          };
+          useIndicator = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
+        };
         historyLimit = lib.mkOption {
           type = t.int;
         };
@@ -2599,6 +2716,19 @@ in
       };
       groupPolicy = lib.mkOption {
         type = t.enum [ "open" "disabled" "allowlist" ];
+      };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
       };
       historyLimit = lib.mkOption {
         type = t.int;
@@ -2793,6 +2923,19 @@ in
         };
         groupPolicy = lib.mkOption {
           type = t.enum [ "open" "disabled" "allowlist" ];
+        };
+        heartbeat = lib.mkOption {
+          type = t.submodule { options = {
+          showAlerts = lib.mkOption {
+            type = t.bool;
+          };
+          showOk = lib.mkOption {
+            type = t.bool;
+          };
+          useIndicator = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
         };
         historyLimit = lib.mkOption {
           type = t.int;
@@ -3022,6 +3165,19 @@ in
       };
       groupPolicy = lib.mkOption {
         type = t.enum [ "open" "disabled" "allowlist" ];
+      };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
       };
       historyLimit = lib.mkOption {
         type = t.int;
@@ -3262,6 +3418,19 @@ in
           };
         }; });
         };
+        heartbeat = lib.mkOption {
+          type = t.submodule { options = {
+          showAlerts = lib.mkOption {
+            type = t.bool;
+          };
+          showOk = lib.mkOption {
+            type = t.bool;
+          };
+          useIndicator = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
+        };
         historyLimit = lib.mkOption {
           type = t.int;
         };
@@ -3477,6 +3646,19 @@ in
         };
       }; });
       };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
+      };
       historyLimit = lib.mkOption {
         type = t.int;
       };
@@ -3631,6 +3813,19 @@ in
           };
         }; });
         };
+        heartbeat = lib.mkOption {
+          type = t.submodule { options = {
+          showAlerts = lib.mkOption {
+            type = t.bool;
+          };
+          showOk = lib.mkOption {
+            type = t.bool;
+          };
+          useIndicator = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
+        };
         historyLimit = lib.mkOption {
           type = t.int;
         };
@@ -3750,6 +3945,19 @@ in
         }; };
         };
       }; });
+      };
+      heartbeat = lib.mkOption {
+        type = t.submodule { options = {
+        showAlerts = lib.mkOption {
+          type = t.bool;
+        };
+        showOk = lib.mkOption {
+          type = t.bool;
+        };
+        useIndicator = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
       };
       historyLimit = lib.mkOption {
         type = t.int;

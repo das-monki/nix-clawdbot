@@ -49,6 +49,10 @@
 
         checks = {
           gateway = packageSetStable.clawdbot-gateway;
+          config-schema = pkgs.callPackage ./nix/checks/clawdbot-config-schema.nix {
+            inherit home-manager;
+            steipeteToolsInput = nix-steipete-tools;
+          };
         } // (if pkgs.stdenv.hostPlatform.isLinux then {
           gateway-tests = pkgs.callPackage ./nix/checks/clawdbot-gateway-tests.nix {
             sourceInfo = sourceInfoStable;

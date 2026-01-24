@@ -203,7 +203,7 @@ nix shell --extra-experimental-features "nix-command flakes" nixpkgs#nodejs_22 n
   bash -c "cd '$tmp_src/src' && pnpm install --frozen-lockfile --ignore-scripts"
 
 nix shell --extra-experimental-features "nix-command flakes" nixpkgs#nodejs_22 nixpkgs#pnpm_10 -c \
-  bash -c "cd '$tmp_src/src' && pnpm exec tsx '$repo_root/nix/scripts/generate-config-options.ts' --repo . --out '$repo_root/nix/generated/clawdbot-config-options.nix'"
+  bash -c "cd '$tmp_src/src' && pnpm exec tsx '$repo_root/nix/scripts/generate-config-options.ts' --repo . --out '$repo_root/nix/generated/clawdbot-config-options.nix' --schema-out '$repo_root/nix/generated/clawdbot-config-schema.json'"
 
 cleanup_tmp
 trap - EXIT
@@ -240,7 +240,8 @@ fi
 
 log "Committing updated pins"
 git add "$source_file" "$app_file" "$gateway_file" "$tests_file" "$options_file" \
-  "$repo_root/nix/generated/clawdbot-config-options.nix"
+  "$repo_root/nix/generated/clawdbot-config-options.nix" \
+  "$repo_root/nix/generated/clawdbot-config-schema.json"
 git commit -F - <<'EOF'
 🤖 codex: bump clawdbot pins (no-issue)
 
@@ -249,7 +250,7 @@ What:
 - refresh macOS app pin to latest release asset
 - update source and app hashes
 - update version strings in gateway and check derivations
-- regenerate config options from upstream schema
+- regenerate config options and JSON schema from upstream
 
 Why:
 - keep nix-clawdbot on latest upstream for yolo mode

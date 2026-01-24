@@ -11,6 +11,7 @@ const argValue = (flag: string): string | null => {
 
 const repo = argValue("--repo") ?? process.cwd();
 const outPath = argValue("--out") ?? path.join(process.cwd(), "nix/generated/clawdbot-config-options.nix");
+const schemaOutPath = argValue("--schema-out");
 
 const schemaPath = path.join(repo, "src/config/zod-schema.ts");
 const schemaUrl = pathToFileURL(schemaPath).href;
@@ -30,6 +31,13 @@ const loadSchema = async (): Promise<Record<string, unknown>> => {
 
 const main = async (): Promise<void> => {
   const schema = await loadSchema();
+
+  // Optionally write raw JSON schema for validation purposes
+  if (schemaOutPath) {
+    fs.mkdirSync(path.dirname(schemaOutPath), { recursive: true });
+    fs.writeFileSync(schemaOutPath, JSON.stringify(schema, null, 2), "utf8");
+  }
+
   const definitions: Record<string, unknown> =
     (schema.definitions as Record<string, unknown>) ||
     (schema.$defs as Record<string, unknown>) ||

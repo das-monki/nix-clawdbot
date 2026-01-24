@@ -74,6 +74,7 @@ stdenv.mkDerivation (finalAttrs: {
     STDENV_SETUP = "${stdenv}/setup";
     CONFIG_OPTIONS_GENERATOR = "${../scripts/generate-config-options.ts}";
     CONFIG_OPTIONS_GOLDEN = "${../generated/clawdbot-config-options.nix}";
+    CONFIG_SCHEMA_GOLDEN = "${../generated/clawdbot-config-schema.json}";
     NODE_ENGINE_CHECK = "${../scripts/check-node-engine.ts}";
   };
 

@@ -45,11 +45,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1769163093,
-        "narHash": "sha256-YkMVuGjS/jXHvQJ7solXC99S1jiR85apQP6DgIL1kPQ=",
+        "lastModified": 1769344191,
+        "narHash": "sha256-w+OpXY4SD9zzzMGDX8nUl75mN/x/0bLNH3TwdCoV9U8=",
         "owner": "das-monki",
         "repo": "nix-steipete-tools",
-        "rev": "c5d5a0a1d4c5032b567b4104079cc5527f499f8f",
+        "rev": "fcf63a92bfa158b87114402705b5380a5a1708ee",
         "type": "github"
       },
       "original": {

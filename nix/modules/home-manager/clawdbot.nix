@@ -53,19 +53,60 @@ let
     };
   };
 
-  # First-party plugins from nix-steipete-tools (passed via extraSpecialArgs)
-  firstPartyPluginNames = [
-    "summarize" "peekaboo" "oracle" "poltergeist" "sag"
-    "camsnap" "gogcli" "bird" "sonoscli" "imsg"
-  ];
+  # All plugin sources: steipeteToolsInput (pre-bound) + user-provided pluginInputs
+  allPluginInputs = [ steipeteToolsInput ] ++ cfg.pluginInputs;
 
-  firstPartyPlugins = lib.filter (p: p != null) (map (name:
-    if (cfg.firstParty.${name}.enable or false)
-    then { input = steipeteToolsInput; plugin = name; }
-    else null
-  ) firstPartyPluginNames);
+  # Discover all available plugins from all inputs
+  # Returns: { pluginName = { input, definition }; ... }
+  discoverPlugins = inputs:
+    lib.foldl' (acc: input:
+      let
+        plugins = input.clawdbotPlugins or {};
+        withInput = lib.mapAttrs (name: def: { inherit input; definition = def; }) plugins;
+      in
+      acc // withInput  # later inputs override earlier ones
+    ) {} inputs;
 
-  effectivePlugins = cfg.plugins ++ firstPartyPlugins;
+  availablePlugins = discoverPlugins allPluginInputs;
+
+  # Plugin module for the plugins.<name> options
+  pluginModule = { name, config, ... }: {
+    options = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable the ${name} plugin.";
+      };
+      config = lib.mkOption {
+        type = lib.types.attrs;
+        default = {};
+        description = "Plugin-specific configuration (env/files/etc).";
+      };
+    };
+  };
+
+  # Convert enabled plugins to the format expected by resolvePlugin
+  mkPluginList = pluginsCfg:
+    lib.filter (p: p != null) (lib.mapAttrsToList (name: pcfg:
+      if pcfg.enable then
+        if availablePlugins ? ${name} then
+          {
+            input = availablePlugins.${name}.input;
+            plugin = name;
+            config = pcfg.config;
+          }
+        else
+          throw "Plugin '${name}' not found in any registered plugin source. Available: ${lib.concatStringsSep ", " (lib.attrNames availablePlugins)}"
+      else null
+    ) pluginsCfg);
+
+  # Get effective plugins for an instance (merge top-level defaults with instance overrides)
+  # Instance plugins override top-level plugins for the same name
+  effectivePluginsFor = inst:
+    let
+      merged = cfg.plugins // inst.plugins;
+    in
+    mkPluginList merged;
 
   instanceModule = { name, config, ... }: {
     options = {
@@ -156,32 +197,9 @@ let
       };
 
       plugins = lib.mkOption {
-        type = lib.types.listOf (lib.types.submodule {
-          options = {
-            source = lib.mkOption {
-              type = lib.types.nullOr lib.types.str;
-              default = null;
-              description = "Plugin source URL (e.g., github:owner/repo). Requires --impure or locked URL. Prefer 'input' for pure evaluation.";
-            };
-            input = lib.mkOption {
-              type = lib.types.nullOr lib.types.attrs;
-              default = null;
-              description = "Plugin flake input (e.g., inputs.my-plugins). Preferred over 'source' for pure evaluation.";
-            };
-            plugin = lib.mkOption {
-              type = lib.types.nullOr lib.types.str;
-              default = null;
-              description = "Plugin name to select from clawdbotPlugins (for multi-plugin flakes).";
-            };
-            config = lib.mkOption {
-              type = lib.types.attrs;
-              default = {};
-              description = "Plugin-specific configuration (env/files/etc).";
-            };
-          };
-        });
-        default = effectivePlugins;
-        description = "Plugins enabled for this instance (includes first-party toggles).";
+        type = lib.types.attrsOf (lib.types.submodule pluginModule);
+        default = cfg.plugins;
+        description = "Plugins enabled for this instance. Inherits from top-level plugins by default.";
       };
 
       providers.anthropic = {
@@ -543,43 +561,21 @@ let
       {};
 
   resolvePlugin = plugin: let
-    # Support both flake inputs (pure) and URL strings (legacy/impure)
-    hasInput = plugin.input != null;
-    hasSource = plugin.source != null;
-    pluginRef =
-      if hasInput then "flake input"
-      else if hasSource then plugin.source
-      else throw "Plugin must specify either 'input' (flake input) or 'source' (URL string)";
-    flake =
-      if hasInput then plugin.input
-      else if hasSource then builtins.getFlake plugin.source
-      else throw "Plugin must specify either 'input' or 'source'";
-    # Support both single-plugin flakes (clawdbotPlugin) and
-    # multi-plugin flakes (clawdbotPlugins.<name>)
-    clawdbotPlugin =
-      if plugin.plugin != null then
-        # Multi-plugin flake: select by name
-        if flake ? clawdbotPlugins && flake.clawdbotPlugins ? ${plugin.plugin}
-        then flake.clawdbotPlugins.${plugin.plugin}
-        else throw "clawdbotPlugins.${plugin.plugin} missing in ${pluginRef}"
-      else
-        # Single-plugin flake (original behavior)
-        if flake ? clawdbotPlugin then flake.clawdbotPlugin
-        else throw "clawdbotPlugin missing in ${pluginRef}";
+    # Plugin format: { input, plugin, config } from mkPluginList
+    flake = plugin.input;
+    pluginName = plugin.plugin;
+    clawdbotPlugin = flake.clawdbotPlugins.${pluginName};
     needs = clawdbotPlugin.needs or {};
     # Get packages for target system from flake.packages.${system}
-    # This avoids cross-compilation issues where builtins.currentSystem
-    # in the plugin flake returns the build host instead of target
-    # For multi-plugin flakes, prefer plugin-specific packages if declared
     targetPackages = flake.packages.${pkgs.system} or {};
+    # Prefer plugin-specific package if available, otherwise use default
     pluginPackages =
-      if clawdbotPlugin ? packages && clawdbotPlugin.packages != []
-      then clawdbotPlugin.packages
-      else if targetPackages != {} then lib.attrValues targetPackages
+      if targetPackages ? ${pluginName} then [ targetPackages.${pluginName} ]
+      else if targetPackages ? default then [ targetPackages.default ]
       else [];
   in {
-    source = pluginRef;
-    name = clawdbotPlugin.name or (throw "clawdbotPlugin.name missing in ${pluginRef}");
+    source = "plugin:${pluginName}";
+    name = clawdbotPlugin.name;
     skills = clawdbotPlugin.skills or [];
     packages = pluginPackages;
     needs = {
@@ -592,19 +588,10 @@ let
   resolvedPluginsByInstance =
     lib.mapAttrs (instName: inst:
       let
-        resolved = map resolvePlugin inst.plugins;
-        counts = lib.foldl' (acc: p:
-          acc // { "${p.name}" = (acc.${p.name} or 0) + 1; }
-        ) {} resolved;
-        duplicates = lib.attrNames (lib.filterAttrs (_: v: v > 1) counts);
-        byName = lib.foldl' (acc: p: acc // { "${p.name}" = p; }) {} resolved;
-        ordered = lib.attrValues byName;
+        pluginList = effectivePluginsFor inst;
+        resolved = map resolvePlugin pluginList;
       in
-        if duplicates == []
-        then ordered
-        else lib.warn
-          "programs.clawdbot.instances.${instName}: duplicate plugin names detected (${lib.concatStringsSep ", " duplicates}); last entry wins."
-          ordered
+        resolved
     ) enabledInstances;
 
   pluginPackagesFor = instName:
@@ -999,33 +986,23 @@ in {
       description = "Declarative skills installed into each instance workspace.";
     };
 
-    plugins = lib.mkOption {
-      type = lib.types.listOf (lib.types.submodule {
-        options = {
-          source = lib.mkOption {
-            type = lib.types.nullOr lib.types.str;
-            default = null;
-            description = "Plugin source URL (e.g., github:owner/repo). Requires --impure or locked URL. Prefer 'input' for pure evaluation.";
-          };
-          input = lib.mkOption {
-            type = lib.types.nullOr lib.types.attrs;
-            default = null;
-            description = "Plugin flake input (e.g., inputs.my-plugins). Preferred over 'source' for pure evaluation.";
-          };
-          plugin = lib.mkOption {
-            type = lib.types.nullOr lib.types.str;
-            default = null;
-            description = "Plugin name to select from clawdbotPlugins (for multi-plugin flakes).";
-          };
-          config = lib.mkOption {
-            type = lib.types.attrs;
-            default = {};
-            description = "Plugin-specific configuration (env/files/etc).";
-          };
-        };
-      });
+    pluginInputs = lib.mkOption {
+      type = lib.types.listOf lib.types.attrs;
       default = [];
-      description = "Plugins enabled for the default instance (merged with first-party toggles).";
+      description = ''
+        Additional flake inputs that provide clawdbotPlugins.
+        nix-steipete-tools is always included automatically.
+        Example: [ inputs.nix-clawdbot-plugins inputs.my-custom-plugins ]
+      '';
+    };
+
+    plugins = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule pluginModule);
+      default = {};
+      description = ''
+        Plugins to enable. These are inherited by all instances unless overridden.
+        Example: plugins.summarize.enable = true;
+      '';
     };
 
     defaults = {
@@ -1038,59 +1015,6 @@ in {
         type = lib.types.enum [ "off" "minimal" "low" "medium" "high" ];
         default = "high";
         description = "Default thinking level for all instances (\"max\" maps to \"high\").";
-      };
-    };
-
-    firstParty = {
-      summarize.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable the summarize plugin (first-party).";
-      };
-      peekaboo.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable the peekaboo plugin (first-party).";
-      };
-      oracle.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the oracle plugin (first-party).";
-      };
-      poltergeist.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the poltergeist plugin (first-party).";
-      };
-      sag.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the sag plugin (first-party).";
-      };
-      camsnap.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the camsnap plugin (first-party).";
-      };
-      gogcli.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the gogcli plugin (first-party).";
-      };
-      bird.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the bird plugin (first-party).";
-      };
-      sonoscli.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the sonoscli plugin (first-party).";
-      };
-      imsg.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable the imsg plugin (first-party).";
       };
     };
 
